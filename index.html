@@ -5,6 +5,74 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>90-Day Execution System</title>
 <style>
+/* ── Password gate ── */
+#pw-gate {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #0f0f0e;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+#pw-gate.hide { display: none; }
+.pw-box {
+  width: 100%; max-width: 340px;
+  background: #1a1a18;
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 32px 28px;
+  text-align: center;
+}
+.pw-logo {
+  font-size: 28px; font-weight: 700;
+  color: #e8e6de; letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+.pw-sub {
+  font-size: 12px; color: #6e6c66;
+  letter-spacing: 0.4px; text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.pw-input {
+  width: 100%; padding: 11px 14px;
+  font-size: 15px; font-family: inherit;
+  background: #252523;
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 8px; color: #e8e6de;
+  outline: none; text-align: center;
+  letter-spacing: 3px;
+  transition: border-color 0.15s;
+  margin-bottom: 12px;
+}
+.pw-input:focus { border-color: rgba(255,255,255,0.35); }
+.pw-input.shake {
+  animation: pw-shake 0.35s ease;
+  border-color: #a32d2d;
+}
+@keyframes pw-shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-5px)}
+  80%{transform:translateX(5px)}
+}
+.pw-btn {
+  width: 100%; padding: 11px;
+  font-size: 13px; font-weight: 600;
+  font-family: inherit;
+  background: #e8e6de; color: #1a1a18;
+  border: none; border-radius: 8px;
+  cursor: pointer; letter-spacing: 0.3px;
+  transition: opacity 0.12s;
+}
+.pw-btn:hover { opacity: 0.88; }
+.pw-error {
+  font-size: 12px; color: #f09595;
+  margin-top: 10px; min-height: 18px;
+}
+.pw-hint {
+  font-size: 11px; color: #444441;
+  margin-top: 20px;
+}
+
 /* ── WordPress fallback CSS variables ── */
 :root {
   --c-bg: #ffffff;
@@ -335,6 +403,45 @@ tr:last-child td { border-bottom: none; }
 .lbl { font-weight: 600; color: var(--c-text); }
 hr { border: none; border-top: 0.5px solid var(--c-border); margin: 12px 0; }
 
+.log-entry {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--c-bg);
+}
+.log-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.log-entry-date {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.log-entry-del {
+  font-size: 11px;
+  color: var(--c-hint);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  line-height: 1;
+}
+.log-entry-del:hover { color: var(--c-danger); }
+.log-entry-text {
+  font-size: 13px;
+  color: var(--c-text);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* ── Daily Log (Review tab) ── */
 .log-area {
   width: 100%;
@@ -398,7 +505,20 @@ hr { border: none; border-top: 0.5px solid var(--c-border); margin: 12px 0; }
 }
 </style>
 
-<div id="sys-root">
+<!-- ── PASSWORD GATE ── -->
+<div id="pw-gate">
+  <div class="pw-box">
+    <div class="pw-logo">90-Day System</div>
+    <div class="pw-sub">Private — Enter password to continue</div>
+    <input type="password" id="pw-input" class="pw-input" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="pw-btn" onclick="checkPw()">Unlock</button>
+    <div class="pw-error" id="pw-error"></div>
+    <div class="pw-hint">Hint: Your first name + 90</div>
+  </div>
+</div>
+
+<div id="sys-root" style="display:none">
 
 <!-- ── HEADER ── -->
 <div class="sys-header">
@@ -795,14 +915,27 @@ hr { border: none; border-top: 0.5px solid var(--c-border); margin: 12px 0; }
 
   <!-- DAILY LOG -->
   <div class="card">
-    <h3>Daily log</h3>
-    <p style="margin-bottom:10px">Write honestly. One entry per day. What you did, what you skipped, and why. No one reads this except you.</p>
-    <textarea id="daily-log" class="log-area" placeholder="What did you do today? What did you skip? What was the real reason?"></textarea>
+    <h3>Daily log <span id="log-entry-count" style="font-size:11px;font-weight:400;color:var(--c-muted);margin-left:6px"></span></h3>
+    <p style="margin-bottom:10px">One entry per day. Write honestly — what you did, what you skipped, and the real reason. Every entry is saved permanently below.</p>
+
+    <!-- Today's date label -->
+    <div style="font-size:11px;font-weight:600;color:var(--c-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px" id="log-today-label"></div>
+
+    <textarea id="daily-log" class="log-area" placeholder="What did you do today? What did you skip? What was the real reason? Be honest — no one reads this except you."></textarea>
     <div class="log-btns">
-      <button class="log-save" onclick="saveLog()">Save log</button>
-      <button class="log-clear" onclick="clearLog()">Clear</button>
+      <button class="log-save" onclick="saveLog()">Save entry</button>
+      <button class="log-clear" onclick="clearDraft()">Clear draft</button>
     </div>
     <div class="log-status" id="log-status"></div>
+
+    <!-- Entry history -->
+    <div id="log-history-wrap" style="margin-top:16px;display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:12px;font-weight:600;color:var(--c-text)">Past entries</span>
+        <button onclick="clearAllLog()" style="font-size:11px;color:var(--c-danger);background:none;border:none;cursor:pointer;padding:0;font-family:inherit">Clear all history</button>
+      </div>
+      <div id="log-history"></div>
+    </div>
   </div>
 
   <div class="card card-info">
@@ -818,6 +951,36 @@ hr { border: none; border-top: 0.5px solid var(--c-border); margin: 12px 0; }
 <script>
 (function(){
   var LS = window.localStorage;
+
+  /* ── PASSWORD GATE ── */
+  var PW = 'shantanu90';
+
+  function checkPw(){
+    var val = document.getElementById('pw-input').value;
+    if(val === PW){
+      document.getElementById('pw-gate').classList.add('hide');
+      document.getElementById('sys-root').style.display = '';
+      try{ sessionStorage.setItem('sys90_auth','1'); } catch(e){}
+    } else {
+      var inp = document.getElementById('pw-input');
+      var err = document.getElementById('pw-error');
+      err.textContent = 'Wrong password. Try again.';
+      inp.value = '';
+      inp.classList.remove('shake');
+      void inp.offsetWidth;
+      inp.classList.add('shake');
+      setTimeout(function(){ err.textContent=''; }, 3000);
+    }
+  }
+  window.checkPw = checkPw;
+
+  /* Check session — don't ask again if already unlocked this session */
+  try {
+    if(sessionStorage.getItem('sys90_auth') === '1'){
+      document.getElementById('pw-gate').classList.add('hide');
+      document.getElementById('sys-root').style.display = '';
+    }
+  } catch(e){}
 
   /* ── Tab switch ── */
   function sw(n){
@@ -871,27 +1034,122 @@ hr { border: none; border-top: 0.5px solid var(--c-border); margin: 12px 0; }
   }
   window.markMissed = markMissed;
 
-  /* ── Daily log ── */
+  /* ── JOURNAL LOG ── */
+
+  /* Returns "Thu, 10 Apr 2025" style date string */
+  function todayStr(){
+    var d = new Date();
+    var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return days[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+  }
+
+  function loadEntries(){
+    try {
+      var raw = LS.getItem('sys90_entries');
+      return raw ? JSON.parse(raw) : [];
+    } catch(e){ return []; }
+  }
+
+  function saveEntries(arr){
+    try{ LS.setItem('sys90_entries', JSON.stringify(arr)); } catch(e){}
+  }
+
+  function renderEntries(){
+    var entries = loadEntries();
+    var wrap = document.getElementById('log-history-wrap');
+    var hist = document.getElementById('log-history');
+    var cnt  = document.getElementById('log-entry-count');
+
+    if(entries.length === 0){
+      wrap.style.display = 'none';
+      cnt.textContent = '';
+      return;
+    }
+
+    wrap.style.display = 'block';
+    cnt.textContent = '(' + entries.length + ' saved)';
+    hist.innerHTML = '';
+
+    /* Newest first */
+    for(var i = entries.length - 1; i >= 0; i--){
+      var e = entries[i];
+      var div = document.createElement('div');
+      div.className = 'log-entry';
+      div.setAttribute('data-idx', i);
+      div.innerHTML =
+        '<div class="log-entry-header">' +
+          '<span class="log-entry-date">' + e.date + '</span>' +
+          '<button class="log-entry-del" onclick="deleteEntry('+i+')">&#10005; delete</button>' +
+        '</div>' +
+        '<div class="log-entry-text">' + escHtml(e.text) + '</div>';
+      hist.appendChild(div);
+    }
+  }
+
+  function escHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
   function saveLog(){
-    var v = document.getElementById('daily-log').value;
-    try{ LS.setItem('sys90_log', v); } catch(e){}
+    var text = document.getElementById('daily-log').value.trim();
+    if(!text){ 
+      var st = document.getElementById('log-status');
+      st.textContent = 'Nothing to save — write something first.';
+      st.className = 'log-status';
+      setTimeout(function(){ st.textContent=''; }, 2500);
+      return;
+    }
+    var entries = loadEntries();
+    /* If an entry for today already exists, update it instead of adding duplicate */
+    var today = todayStr();
+    var existing = -1;
+    for(var i=0;i<entries.length;i++){
+      if(entries[i].date === today){ existing = i; break; }
+    }
+    if(existing >= 0){
+      entries[existing].text = text;
+    } else {
+      entries.push({ date: today, text: text });
+    }
+    saveEntries(entries);
+    document.getElementById('daily-log').value = '';
+    renderEntries();
     var st = document.getElementById('log-status');
-    st.textContent = 'Saved — '+new Date().toLocaleString();
+    st.textContent = 'Entry saved — ' + today;
     st.className = 'log-status saved';
     setTimeout(function(){ st.textContent=''; st.className='log-status'; }, 3000);
   }
   window.saveLog = saveLog;
 
-  function clearLog(){
-    if(!confirm('Clear the daily log? This cannot be undone.')) return;
+  function clearDraft(){
     document.getElementById('daily-log').value = '';
-    try{ LS.removeItem('sys90_log'); } catch(e){}
     var st = document.getElementById('log-status');
-    st.textContent = 'Log cleared.';
+    st.textContent = 'Draft cleared.';
     st.className = 'log-status';
     setTimeout(function(){ st.textContent=''; }, 2000);
   }
-  window.clearLog = clearLog;
+  window.clearDraft = clearDraft;
+
+  function deleteEntry(idx){
+    if(!confirm('Delete this entry? Cannot be undone.')) return;
+    var entries = loadEntries();
+    entries.splice(idx, 1);
+    saveEntries(entries);
+    renderEntries();
+  }
+  window.deleteEntry = deleteEntry;
+
+  function clearAllLog(){
+    if(!confirm('Delete ALL journal entries permanently? This cannot be undone.')) return;
+    try{ LS.removeItem('sys90_entries'); } catch(e){}
+    renderEntries();
+    var st = document.getElementById('log-status');
+    st.textContent = 'All entries deleted.';
+    st.className = 'log-status';
+    setTimeout(function(){ st.textContent=''; }, 2500);
+  }
+  window.clearAllLog = clearAllLog;
 
   /* ── Auto-load on page open ── */
   try {
@@ -899,12 +1157,32 @@ hr { border: none; border-top: 0.5px solid var(--c-border); margin: 12px 0; }
     if(d !== null) updateBar(d); else updateBar(0);
 
     var streak = parseInt(LS.getItem('sys90_streak'))||0;
-    renderStreak(streak, streak > 0 ? streak+' day'+(streak===1?'':' days')+' strong.' : 'Mark today\'s execution.');
+    renderStreak(streak, streak > 0 ? streak+' day'+(streak===1?'':' days')+' strong.' : "Mark today's execution.");
 
-    var log = LS.getItem('sys90_log');
-    if(log) document.getElementById('daily-log').value = log;
+    /* Set today's date label */
+    document.getElementById('log-today-label').textContent = todayStr();
+
+    /* Load today's draft if user saved but didn't submit yet */
+    try {
+      var draft = LS.getItem('sys90_draft');
+      if(draft) document.getElementById('daily-log').value = draft;
+    } catch(ex){}
+
+    renderEntries();
   } catch(e) {
     updateBar(0);
+  }
+
+  /* Auto-save textarea as draft while typing */
+  var draftTimer;
+  var logEl = document.getElementById('daily-log');
+  if(logEl){
+    logEl.addEventListener('input', function(){
+      clearTimeout(draftTimer);
+      draftTimer = setTimeout(function(){
+        try{ LS.setItem('sys90_draft', logEl.value); } catch(ex){}
+      }, 800);
+    });
   }
 
 })();
