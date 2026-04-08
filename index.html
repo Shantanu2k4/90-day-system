@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>90-Day Execution System</title>
+<style>
+/* ── WordPress fallback CSS variables ── */
+:root {
+  --c-bg: #ffffff;
+  --c-bg2: #f5f5f4;
+  --c-bg3: #eeede9;
+  --c-border: rgba(0,0,0,0.10);
+  --c-border2: rgba(0,0,0,0.18);
+  --c-text: #1a1a18;
+  --c-muted: #5c5c58;
+  --c-hint: #8a8a84;
+  --c-success-bg: #eaf3de;
+  --c-success: #3b6d11;
+  --c-danger-bg: #fcebeb;
+  --c-danger: #a32d2d;
+  --c-info-bg: #e6f1fb;
+  --c-info: #185fa5;
+  --c-warn-bg: #faeeda;
+  --c-warn: #854f0b;
+  --c-accent: #1a1a18;
+  --c-streak: #3b6d11;
+  --radius: 8px;
+  --radius-lg: 12px;
+  font-size: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-bg: #1c1c1a;
+    --c-bg2: #252523;
+    --c-bg3: #2e2e2b;
+    --c-border: rgba(255,255,255,0.10);
+    --c-border2: rgba(255,255,255,0.18);
+    --c-text: #e8e6de;
+    --c-muted: #a8a69e;
+    --c-hint: #6e6c66;
+    --c-success-bg: #173404;
+    --c-success: #97c459;
+    --c-danger-bg: #501313;
+    --c-danger: #f09595;
+    --c-info-bg: #042c53;
+    --c-info: #85b7eb;
+    --c-warn-bg: #412402;
+    --c-warn: #ef9f27;
+    --c-accent: #e8e6de;
+  }
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--c-bg); color: var(--c-text); }
+
+/* ── Wrapper ── */
+#sys-root { max-width: 780px; margin: 0 auto; padding: 0 0 40px; }
+
+/* ── Header ── */
+.sys-header {
+  padding: 22px 20px 0;
+  border-bottom: 0.5px solid var(--c-border);
+  margin-bottom: 0;
+}
+.sys-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sys-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  color: var(--c-text);
+  line-height: 1.2;
+}
+.sys-subtitle {
+  font-size: 12px;
+  color: var(--c-muted);
+  margin-top: 3px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.sys-banner {
+  margin-top: 14px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: var(--c-bg2);
+  border-left: 2px solid var(--c-accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 12px;
+  color: var(--c-muted);
+  font-style: italic;
+  letter-spacing: 0.1px;
+  line-height: 1.5;
+}
+.sys-banner strong {
+  color: var(--c-text);
+  font-style: normal;
+}
+
+/* ── Progress bar (top) ── */
+.sys-progress-wrap {
+  padding: 14px 20px 16px;
+  border-bottom: 0.5px solid var(--c-border);
+}
+.sys-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.sys-day-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text);
+  white-space: nowrap;
+}
+.sys-day-sub {
+  font-size: 12px;
+  color: var(--c-muted);
+  margin-left: auto;
+}
+.sys-pbar-track {
+  width: 100%;
+  height: 6px;
+  background: var(--c-bg3);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.sys-pbar-fill {
+  height: 100%;
+  background: var(--c-text);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+.sys-progress-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.sys-progress-controls label {
+  font-size: 12px;
+  color: var(--c-muted);
+}
+.sys-day-input {
+  width: 64px;
+  padding: 4px 8px;
+  font-size: 13px;
+  border: 0.5px solid var(--c-border2);
+  border-radius: var(--radius);
+  background: var(--c-bg);
+  color: var(--c-text);
+  outline: none;
+  font-family: inherit;
+}
+.sys-day-input:focus { border-color: var(--c-text); }
+.sys-btn-sm {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 0.5px solid var(--c-border2);
+  border-radius: var(--radius);
+  background: var(--c-bg);
+  color: var(--c-text);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.sys-btn-sm:hover { background: var(--c-bg3); }
+
+/* ── Streak row ── */
+.sys-streak-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 0.5px solid var(--c-border);
+  flex-wrap: wrap;
+}
+.sys-streak-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text);
+  background: var(--c-bg2);
+  border: 0.5px solid var(--c-border);
+  border-radius: 99px;
+  padding: 4px 14px 4px 10px;
+}
+.sys-streak-icon { font-size: 14px; line-height: 1; }
+.sys-streak-label { font-size: 11px; color: var(--c-muted); font-weight: 400; }
+.sys-btn-success {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 0.5px solid var(--c-success);
+  border-radius: var(--radius);
+  background: var(--c-success-bg);
+  color: var(--c-success);
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.12s;
+}
+.sys-btn-success:hover { opacity: 0.82; }
+.sys-btn-danger {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 0.5px solid var(--c-danger);
+  border-radius: var(--radius);
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.12s;
+}
+.sys-btn-danger:hover { opacity: 0.82; }
+.sys-streak-msg {
+  font-size: 11px;
+  color: var(--c-muted);
+  margin-left: auto;
+}
+
+/* ── Tab nav ── */
+.sys-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 12px 20px 0;
+  border-bottom: 0.5px solid var(--c-border);
+}
+.tb {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 6px 12px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--c-muted);
+  font-family: inherit;
+  transition: color 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+.tb:hover { color: var(--c-text); }
+.tb.on {
+  color: var(--c-text);
+  font-weight: 600;
+  border-bottom-color: var(--c-text);
+}
+
+/* ── Content area ── */
+.sys-content { padding: 16px 20px 0; }
+.pn { display: none; }
+.pn.on { display: block; }
+
+/* ── Cards ── */
+.card {
+  background: var(--c-bg2);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 0.5px solid var(--c-border);
+}
+.card-info {
+  background: var(--c-info-bg);
+  border: 0.5px solid rgba(24,95,165,0.25);
+}
+.g2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-bottom: 12px; }
+.g4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; margin-bottom: 12px; }
+@media (max-width: 540px) {
+  .g4 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+.mc {
+  background: var(--c-bg2);
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  text-align: center;
+}
+.mv { font-size: 18px; font-weight: 600; color: var(--c-text); display: block; }
+.ml { font-size: 11px; color: var(--c-muted); margin-top: 2px; display: block; }
+
+/* ── Typography ── */
+h3 { font-size: 14px; font-weight: 600; margin: 0 0 10px; color: var(--c-text); }
+h4 { font-size: 13px; font-weight: 600; margin: 12px 0 5px; color: var(--c-text); }
+p { font-size: 13px; color: var(--c-muted); line-height: 1.65; margin: 0 0 7px; }
+li { font-size: 13px; color: var(--c-muted); line-height: 1.8; }
+ul { padding-left: 16px; margin: 0 0 8px; }
+ol { padding-left: 18px; margin: 0 0 8px; }
+
+/* ── Tables ── */
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 7px 10px; font-weight: 600; color: var(--c-muted); border-bottom: 0.5px solid var(--c-border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+td { padding: 7px 10px; border-bottom: 0.5px solid var(--c-border); color: var(--c-muted); vertical-align: top; font-size: 12px; }
+tr:last-child td { border-bottom: none; }
+.bd { color: var(--c-text); font-weight: 600; }
+
+/* ── Badges ── */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; line-height: 1.5; }
+.ok { background: var(--c-success-bg); color: var(--c-success); }
+.dn { background: var(--c-danger-bg); color: var(--c-danger); }
+.inf { background: var(--c-info-bg); color: var(--c-info); }
+.warn { background: var(--c-warn-bg); color: var(--c-warn); }
+
+/* ── Alert ── */
+.alert {
+  border: 0.5px solid var(--c-danger);
+  background: var(--c-danger-bg);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--c-danger);
+  line-height: 1.6;
+}
+
+/* ── Phase ── */
+.phase { border-left: 2px solid var(--c-border2); padding-left: 12px; margin-bottom: 14px; }
+.phase h4 { margin-top: 0; }
+
+/* ── Misc ── */
+.lbl { font-weight: 600; color: var(--c-text); }
+hr { border: none; border-top: 0.5px solid var(--c-border); margin: 12px 0; }
+
+/* ── Daily Log (Review tab) ── */
+.log-area {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 0.5px solid var(--c-border2);
+  border-radius: var(--radius);
+  background: var(--c-bg);
+  color: var(--c-text);
+  resize: vertical;
+  outline: none;
+  line-height: 1.6;
+  transition: border-color 0.12s;
+}
+.log-area:focus { border-color: var(--c-text); }
+.log-area::placeholder { color: var(--c-hint); }
+.log-btns { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.log-save {
+  padding: 6px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 0.5px solid var(--c-text);
+  border-radius: var(--radius);
+  background: var(--c-text);
+  color: var(--c-bg);
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.12s;
+}
+.log-save:hover { opacity: 0.82; }
+.log-clear {
+  padding: 6px 18px;
+  font-size: 13px;
+  border: 0.5px solid var(--c-border2);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--c-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.log-clear:hover { background: var(--c-bg3); color: var(--c-text); }
+.log-status {
+  font-size: 11px;
+  color: var(--c-muted);
+  margin-top: 6px;
+  min-height: 16px;
+  transition: opacity 0.2s;
+}
+.log-status.saved { color: var(--c-success); }
+
+/* ── Responsive tables ── */
+@media (max-width: 600px) {
+  .sys-content { padding: 14px 14px 0; }
+  .sys-tabs { padding: 10px 14px 0; }
+  .sys-header, .sys-progress-wrap, .sys-streak-row { padding-left: 14px; padding-right: 14px; }
+  td, th { padding: 6px 8px; font-size: 11px; }
+  .tb { padding: 5px 9px 9px; font-size: 12px; }
+}
+</style>
+
+<div id="sys-root">
+
+<!-- ── HEADER ── -->
+<div class="sys-header">
+  <div class="sys-header-top">
+    <div>
+      <div class="sys-title">90-Day Execution System</div>
+      <div class="sys-subtitle">No motivation. No excuses. Only execution.</div>
+    </div>
+    <div id="header-day-badge" style="font-size:12px;font-weight:600;color:var(--c-muted);background:var(--c-bg2);border:0.5px solid var(--c-border);border-radius:99px;padding:4px 12px;white-space:nowrap;align-self:flex-start;margin-top:2px">Day — / 90</div>
+  </div>
+  <div class="sys-banner">
+    <strong>Is what I am doing right now moving me forward or backward?</strong> — Stop. Answer honestly. Then act.
+  </div>
+</div>
+
+<!-- ── PROGRESS BAR ── -->
+<div class="sys-progress-wrap">
+  <div class="sys-progress-row">
+    <span class="sys-day-label" id="pbar-label">Day 0 of 90</span>
+    <span class="sys-day-sub" id="pbar-pct">0% complete</span>
+  </div>
+  <div class="sys-pbar-track">
+    <div class="sys-pbar-fill" id="pbar-fill" style="width:0%"></div>
+  </div>
+  <div class="sys-progress-controls">
+    <label for="day-input">Update day:</label>
+    <input type="number" id="day-input" class="sys-day-input" min="0" max="90" placeholder="0">
+    <button class="sys-btn-sm" onclick="saveDay()">Save</button>
+    <span id="pbar-phase" style="font-size:11px;color:var(--c-muted);margin-left:4px"></span>
+  </div>
+</div>
+
+<!-- ── STREAK ── -->
+<div class="sys-streak-row">
+  <div class="sys-streak-count">
+    <span class="sys-streak-icon">&#9654;</span>
+    <span id="streak-num">0</span>
+    <span class="sys-streak-label">day streak</span>
+  </div>
+  <button class="sys-btn-success" onclick="markSuccess()">&#10003; Successful Day</button>
+  <button class="sys-btn-danger" onclick="markMissed()">&#10005; Missed Day</button>
+  <span class="sys-streak-msg" id="streak-msg">Mark today's execution.</span>
+</div>
+
+<!-- ── TABS ── -->
+<div class="sys-tabs">
+  <button class="tb on" onclick="sw(0)">Reality</button>
+  <button class="tb" onclick="sw(1)">Training</button>
+  <button class="tb" onclick="sw(2)">Diet</button>
+  <button class="tb" onclick="sw(3)">Mind</button>
+  <button class="tb" onclick="sw(4)">Sleep</button>
+  <button class="tb" onclick="sw(5)">Review</button>
+</div>
+
+<div class="sys-content">
+
+<!-- ── REALITY ── -->
+<div class="pn on" id="p0">
+  <div class="alert" style="margin-top:14px">
+    <strong>Hard truth:</strong> Model physique in 90 days at 102 kg is not a goal — it is a delusion. This plan is built around what is <em>actually</em> achievable and what will set the foundation for the real transformation.
+  </div>
+
+  <div class="g4" style="margin-top:4px">
+    <div class="mc"><span class="mv">102 kg</span><span class="ml">starting weight</span></div>
+    <div class="mc"><span class="mv">90 kg</span><span class="ml">Day 90 target</span></div>
+    <div class="mc"><span class="mv">80 kg</span><span class="ml">model range</span></div>
+    <div class="mc"><span class="mv">14–18 mo</span><span class="ml">full timeline</span></div>
+  </div>
+
+  <div class="card">
+    <h3>What 90 days will actually give you</h3>
+    <ul>
+      <li>10–12 kg of fat loss — visible, dramatic change in face, neck, and waist</li>
+      <li>Measurable muscle on chest, shoulders, and back</li>
+      <li>Clothes fitting completely differently</li>
+      <li>Consistent energy on night shift instead of crashing</li>
+      <li>The exact habit system that gets you to the physique goal in 14–18 months</li>
+    </ul>
+    <p style="margin-top:8px">
+      <span class="badge ok">Achievable in 90 days</span> Dramatic visible transformation &nbsp;
+      <span class="badge dn">Not in 90 days</span> Six-pack, model physique
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Three-phase roadmap</h3>
+    <div class="phase" style="border-color:#1D9E75">
+      <h4 style="color:var(--c-success)">Phase 1 — Days 1–30: Install the system</h4>
+      <p>Hit all 5 sessions every week. Eat on plan 6/7 days. Target: 98 kg. Your Phase 1 habit poster is already in place — this plan is Phase 1 in action. Do not miss a single Monday. The first four weeks build the neural pathways that make everything after automatic.</p>
+    </div>
+    <div class="phase" style="border-color:#378ADD">
+      <h4 style="color:var(--c-info)">Phase 2 — Days 31–60: Add progressive overload</h4>
+      <p>Add weight to every lift weekly. Zero cheat meals this phase. Target: 94 kg. Around week 5 you will feel a mental clarity shift — your brain running on a clean deficit and good sleep is noticeably different.</p>
+    </div>
+    <div class="phase" style="border-color:#BA7517">
+      <h4 style="color:var(--c-warn)">Phase 3 — Days 61–90: Peak execution</h4>
+      <p>Replace 1 roti/day with extra sabzi. Increase calisthenics to 3x/week. Target: 90 kg. By Day 90 you will look like a different person in the mirror. Take the same photo from Day 0. That comparison is your reward.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>The only rule that matters</h3>
+    <p style="font-size:14px;font-weight:600;color:var(--c-text)">You do not feel like going. You go anyway.</p>
+    <p>Every excuse you have made before — tired after shift, too stressed, need to study — will appear again. This system is designed so that even on your worst day, you have a clear path. The question is not whether you can do this. It is whether you respect yourself enough to stop stalling.</p>
+  </div>
+</div>
+
+<!-- ── TRAINING ── -->
+<div class="pn" id="p1">
+  <div class="card" style="margin-top:14px">
+    <h3>Weekly schedule</h3>
+    <table>
+      <thead><tr><th>Day</th><th>Session</th><th>Time</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td class="bd">Monday</td><td>Push (gym)</td><td>16:00–17:45</td><td>85 min lifting + 15 min treadmill walk</td></tr>
+        <tr><td class="bd">Tuesday</td><td>BetterMe calisthenics</td><td>13:00–13:20</td><td>Full body or core. Do before study.</td></tr>
+        <tr><td class="bd">Wednesday</td><td>Pull (gym)</td><td>16:00–17:45</td><td>85 min lifting + 15 min treadmill walk</td></tr>
+        <tr><td class="bd">Thursday</td><td>BetterMe calisthenics</td><td>13:00–13:20</td><td>Full body or core. Do before study.</td></tr>
+        <tr><td class="bd">Friday</td><td>Legs (gym)</td><td>16:00–17:45</td><td>85 min lifting + 15 min treadmill walk</td></tr>
+        <tr><td class="bd">Saturday</td><td>30-min walk</td><td>13:00–13:30</td><td>Active recovery. Not optional.</td></tr>
+        <tr><td class="bd">Sunday</td><td>Rest</td><td>—</td><td>Full rest. No guilt.</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:10px;font-size:12px">The 15-min treadmill walk after each gym session is your primary fat-loss tool — do not skip it. No phone between sets. Rest 90 sec on isolation exercises, 2–3 min on compounds.</p>
+  </div>
+
+  <div class="card">
+    <h3>Push — Monday (chest, shoulders, triceps)</h3>
+    <table>
+      <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Cue</th></tr></thead>
+      <tbody>
+        <tr><td class="bd">Flat bench / chest press machine</td><td>4</td><td>8–10</td><td>When you hit 10 on all 4 sets, add 2.5 kg next week</td></tr>
+        <tr><td class="bd">Incline dumbbell press</td><td>3</td><td>10–12</td><td>Elbows at 45 degrees — not flared out</td></tr>
+        <tr><td class="bd">Overhead press (barbell or DB)</td><td>4</td><td>8–10</td><td>Strict form, no lower back arch</td></tr>
+        <tr><td class="bd">Lateral raises</td><td>3</td><td>15–20</td><td>Light weight. Feel the shoulder. No swinging.</td></tr>
+        <tr><td class="bd">Tricep rope pushdown</td><td>3</td><td>12–15</td><td>Elbows pinned to body throughout</td></tr>
+        <tr><td class="bd">Overhead tricep extension (DB)</td><td>3</td><td>12</td><td>Single dumbbell, full stretch at top</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Pull — Wednesday (back, biceps)</h3>
+    <table>
+      <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Cue</th></tr></thead>
+      <tbody>
+        <tr><td class="bd">Lat pulldown</td><td>4</td><td>10–12</td><td>Wide grip, pull to upper chest, slow on the way up</td></tr>
+        <tr><td class="bd">Seated cable row</td><td>4</td><td>10–12</td><td>Squeeze shoulder blades together at the end</td></tr>
+        <tr><td class="bd">Face pulls</td><td>3</td><td>15–20</td><td>Protects rotator cuff — do not skip this ever</td></tr>
+        <tr><td class="bd">Single-arm dumbbell row</td><td>3</td><td>10–12 each</td><td>Neutral spine. Elbow drives back, not up.</td></tr>
+        <tr><td class="bd">EZ bar curl</td><td>3</td><td>12</td><td>No body swinging. Full range of motion.</td></tr>
+        <tr><td class="bd">Hammer curl</td><td>3</td><td>12</td><td>Neutral grip — builds the thick brachialis muscle</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Legs — Friday (quads, hamstrings, glutes, calves)</h3>
+    <table>
+      <thead><tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Cue</th></tr></thead>
+      <tbody>
+        <tr><td class="bd">Leg press</td><td>4</td><td>10–12</td><td>Feet shoulder-width, knees track over toes</td></tr>
+        <tr><td class="bd">Romanian deadlift</td><td>4</td><td>10–12</td><td>Feel the hamstring stretch. This is the most important lift of the week.</td></tr>
+        <tr><td class="bd">Leg extension</td><td>3</td><td>15</td><td>Pause 1 second at full extension</td></tr>
+        <tr><td class="bd">Lying leg curl</td><td>3</td><td>12–15</td><td>Controlled eccentric. No bouncing.</td></tr>
+        <tr><td class="bd">Standing calf raises</td><td>4</td><td>20–25</td><td>Full range — heel all the way down, all the way up. No half reps.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Progressive overload — the only rule for muscle growth</h3>
+    <p>Every week, either add 2.5 kg to at least one compound lift OR add 1–2 reps to two exercises. If you are not tracking weights, you are not progressing. Take a photo of your log after every session — that is your proof of work.</p>
+    <p>BetterMe sessions: select the full-body or core-focused routines at intermediate level. 20 minutes done is infinitely better than 20 minutes planned.</p>
+  </div>
+</div>
+
+<!-- ── DIET ── -->
+<div class="pn" id="p2">
+  <div class="g2" style="margin-top:14px">
+    <div class="mc"><span class="mv">1,800 kcal</span><span class="ml">daily target</span></div>
+    <div class="mc"><span class="mv">120–130 g</span><span class="ml">protein target</span></div>
+    <div class="mc"><span class="mv">Max 4 rotis</span><span class="ml">per day</span></div>
+    <div class="mc"><span class="mv">~&#8377;175/day</span><span class="ml">estimated food cost</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Daily meal plan — no fridge, Indian vegetarian, night shift schedule</h3>
+    <table>
+      <thead><tr><th>Time</th><th>Meal</th><th>Kcal</th><th>Protein</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="bd">13:00<br><span style="font-size:10px;font-weight:400;color:var(--c-hint)">wake-up</span></td>
+          <td>Sattu drink: 60 g sattu + 400 ml water + lemon + jeera. Add 2 boiled eggs if available near home — buy them, do not store. If no eggs: 2 bananas.</td>
+          <td>420</td><td>26 g</td>
+        </tr>
+        <tr>
+          <td class="bd">15:00<br><span style="font-size:10px;font-weight:400;color:var(--c-hint)">lunch</span></td>
+          <td>Soya chunk curry: 75 g dry soya (soak 15 min in hot water, squeeze, cook with onion-tomato-masala) + 2 rotis + any sabzi</td>
+          <td>490</td><td>46 g</td>
+        </tr>
+        <tr>
+          <td class="bd">15:45<br><span style="font-size:10px;font-weight:400;color:var(--c-hint)">pre-workout</span></td>
+          <td>1 banana + 1 black coffee (no sugar, no milk). This is your natural pre-workout.</td>
+          <td>130</td><td>1 g</td>
+        </tr>
+        <tr>
+          <td class="bd">17:45<br><span style="font-size:10px;font-weight:400;color:var(--c-hint)">post-workout</span></td>
+          <td>Fresh paneer bhurji: 100 g paneer (buy same day, cook immediately) + 2 rotis. OR 3-egg bhurji at a nearby dhaba before shift if easier.</td>
+          <td>480</td><td>24 g</td>
+        </tr>
+        <tr>
+          <td class="bd">22:00<br><span style="font-size:10px;font-weight:400;color:var(--c-hint)">mid-shift</span></td>
+          <td>50 g roasted chana (carry from home in a small container) + 100 ml fresh curd bought near work</td>
+          <td>235</td><td>12 g</td>
+        </tr>
+        <tr>
+          <td class="bd">04:00<br><span style="font-size:10px;font-weight:400;color:var(--c-hint)">pre-sleep</span></td>
+          <td>50 g oats cooked in water + 15 g peanut butter stirred in. Keep oats and peanut butter on your desk at home.</td>
+          <td>275</td><td>11 g</td>
+        </tr>
+        <tr>
+          <td class="bd">Total</td>
+          <td style="font-weight:600;color:var(--c-text)">~2,030 kcal on gym days</td>
+          <td class="bd">2,030</td><td class="bd">120 g</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top:10px;font-size:12px">On non-gym days: skip the 15:45 pre-workout snack &#8594; ~1,900 kcal. Optional upgrade: if budget allows &#8377;1,500/month, add 1 scoop whey protein after workout for +24 g protein, reaching 144 g/day.</p>
+  </div>
+
+  <div class="card">
+    <h3>Your protein MVPs — ranked by value (cost per gram protein)</h3>
+    <table>
+      <thead><tr><th>Food</th><th>Protein/100 g</th><th>Approx. cost</th><th>Practical note</th></tr></thead>
+      <tbody>
+        <tr><td class="bd">Soya chunks (dry)</td><td>52 g</td><td>&#8377;20/100 g</td><td>Best value protein you will ever find. Must be in your diet every day.</td></tr>
+        <tr><td class="bd">Sattu</td><td>22 g</td><td>&#8377;16/100 g</td><td>Ready instantly. No cooking. Ideal morning meal.</td></tr>
+        <tr><td class="bd">Peanuts</td><td>26 g</td><td>&#8377;10/100 g</td><td>High calorie — measure precisely, do not eat from the packet.</td></tr>
+        <tr><td class="bd">Roasted chana</td><td>19 g</td><td>&#8377;15/100 g</td><td>Carry to work. The only snack allowed on shift.</td></tr>
+        <tr><td class="bd">Moong / masoor dal</td><td>14 g cooked</td><td>&#8377;8/serving</td><td>Cheap, high fibre, easy to cook. Use as a base meal.</td></tr>
+        <tr><td class="bd">Paneer (fresh)</td><td>18 g</td><td>&#8377;70/100 g</td><td>Buy only what you cook immediately. No overnight storage.</td></tr>
+        <tr><td class="bd">Eggs (outside)</td><td>13 g per 2 eggs</td><td>&#8377;16/2 eggs</td><td>Eat at breakfast when near a stall. Best complete protein.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Non-negotiable diet rules</h3>
+    <ol>
+      <li>Soya chunks in at least one meal every single day — no exceptions, no substitutions.</li>
+      <li>No biscuits, chips, namkeen, or fried snacks during shift. Roasted chana is your only snack.</li>
+      <li>4 litres of water per day. First thing after waking: 500 ml before anything else.</li>
+      <li>Maximum 4 rotis per day total. Additional hunger = drink water, wait 10 minutes.</li>
+      <li>One bad meal does not make a bad day. Reset at the very next meal — do not let one slip cascade.</li>
+      <li>No chai with sugar on shift. Black coffee or plain water only after 22:30 (caffeine half-life is 6 hours).</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ── MIND ── -->
+<div class="pn" id="p3">
+  <div class="card" style="margin-top:14px">
+    <h3>Your real enemy</h3>
+    <p>You have already identified it yourself: you gravitate toward new tools and systems instead of executing on what you have. For the next 90 days, there are no new systems. Your tools are: gym, BetterMe, GoodNotes, and 100 Days of Code. That is the full list. Every time you find yourself researching a new productivity app or a new workout plan, that is avoidance wearing a productive costume.</p>
+  </div>
+
+  <div class="card">
+    <h3>iPhone 12 rules — effective today</h3>
+    <ol>
+      <li><span class="lbl">Grayscale on.</span> Settings &#8594; Accessibility &#8594; Display &amp; Text Size &#8594; Color Filters &#8594; Greyscale. Colourful apps hijack attention by design. Remove the trigger.</li>
+      <li><span class="lbl">Study window locked.</span> 13:30–16:00: airplane mode. No exceptions. Studying with notifications on is not studying — it is performance.</li>
+      <li><span class="lbl">Screen Time limits.</span> Instagram + YouTube combined: 45 minutes/day, unlockable only after 17:30. Settings &#8594; Screen Time &#8594; App Limits.</li>
+      <li><span class="lbl">Phone-free first 20 minutes.</span> After waking, no phone for 20 minutes. Drink water, eat, stretch first. Your day starts with you — not with someone else's content.</li>
+      <li><span class="lbl">Phone charges on your desk.</span> Not beside your bed. This one change alone improves sleep quality within a week.</li>
+      <li><span class="lbl">The fine.</span> If you scroll outside allowed hours for more than 15 minutes: 20 push-ups before you continue. Consequence changes behaviour — motivation does not.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3>Replace the craving — do not just block it</h3>
+    <table>
+      <thead><tr><th>When you want to...</th><th>Do this instead</th></tr></thead>
+      <tbody>
+        <tr><td class="bd">Open YouTube out of boredom</td><td>Open 100 Days of Code and do one lesson. You have already opened a screen — redirect it.</td></tr>
+        <tr><td class="bd">Check Instagram</td><td>Read 3 pages of your current book. Keep it beside you at all times.</td></tr>
+        <tr><td class="bd">Watch Reels during shift</td><td>Review your Python notes or re-read one section of your economics module on your iPad.</td></tr>
+        <tr><td class="bd">Eat mindlessly</td><td>Drink 300 ml water. Wait 10 minutes. If still hungry, it is a scheduled meal time — eat that.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Four daily discipline anchors</h3>
+    <p>These four actions done every day create identity change over 90 days:</p>
+    <ol>
+      <li>Read your <em>The Daily Stoic</em> entry within 30 minutes of waking. Before the phone.</li>
+      <li>Write 3 sentences in GoodNotes after reading: one insight, one thing you will apply today, one thing you are grateful for.</li>
+      <li>Log your gym weights that evening — even just a photo of a handwritten note — before your shift starts.</li>
+      <li>Before sleep: answer this question honestly in your head — "Did I do what I said I would do today?" If no, write the real reason in GoodNotes. No editorialising.</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ── SLEEP ── -->
+<div class="pn" id="p4">
+  <div class="g2" style="margin-top:14px">
+    <div class="mc"><span class="mv">05:00</span><span class="ml">target sleep time</span></div>
+    <div class="mc"><span class="mv">13:00</span><span class="ml">target wake time</span></div>
+    <div class="mc"><span class="mv">8 hours</span><span class="ml">sleep window</span></div>
+    <div class="mc"><span class="mv">Fixed</span><span class="ml">even on days off</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Pre-sleep protocol — 04:00 to 04:45</h3>
+    <p>What you do in this 45-minute window determines how you feel at 13:00 and whether your afternoon study session is focused or wasted.</p>
+    <ol>
+      <li>Eat your pre-sleep meal (oats + peanut butter) immediately on reaching home. Nutrition in before the system winds down.</li>
+      <li>Change out of work clothes. This is not optional — it signals to your body that the shift is over.</li>
+      <li>Dim all lights. Switch to warm light only.</li>
+      <li>No phone. Maximum 5 minutes of messages if genuinely urgent. Nothing else.</li>
+      <li>Quick 5-minute stretch: neck rolls, shoulder circles, lower back. Night shift wrecks posture — this prevents cumulative injury.</li>
+      <li>Eye mask is mandatory. Buy one this week (&#8377;100–150). Mumbai daylight at 6 am will cut your sleep by 2 hours without it.</li>
+      <li>Fan or AC on. Cooler room = deeper, faster sleep — this is physiologically proven.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3>Morning routine — 13:00 to 13:35</h3>
+    <p>Do not open social media until this sequence is complete. Every single day.</p>
+    <ol>
+      <li>Drink the 500 ml water you left on your desk before sleeping.</li>
+      <li>5 minutes near a window or outside in sunlight — resets your circadian clock even on an inverted schedule.</li>
+      <li>Read The Daily Stoic entry. Write your 3 sentences in GoodNotes.</li>
+      <li>First meal: sattu drink.</li>
+      <li>On Tue / Thu / Sat: BetterMe calisthenics now (13:15–13:35), then shower, then study.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3>Sleep rules</h3>
+    <ul>
+      <li>Never sleep past 13:30, including Sundays. Cycle consistency matters more than extra hours.</li>
+      <li>If you cannot sleep by 05:30: lie still or read something boring. Do not pick up your phone — light resets melatonin and makes the next night worse.</li>
+      <li>No caffeine after 22:30. Tea, coffee, and even cola — all have a 5–6 hour half-life.</li>
+      <li>If you feel groggy at 13:00: cold water on your face, then step outside for 5 minutes. Do not lie back down under any circumstances.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ── REVIEW ── -->
+<div class="pn" id="p5">
+  <div class="card" style="margin-top:14px">
+    <h3>Sunday review — every week, 20 minutes, in GoodNotes</h3>
+    <p>Do this between 14:00 and 15:00 every Sunday. Write actual numbers — not feelings, not approximate memory.</p>
+    <table>
+      <thead><tr><th>#</th><th>Question</th><th>Target</th></tr></thead>
+      <tbody>
+        <tr><td class="bd">1</td><td>Workouts completed this week</td><td>5 out of 5</td></tr>
+        <tr><td class="bd">2</td><td>Diet adherence score (1–10)</td><td>8 or above</td></tr>
+        <tr><td class="bd">3</td><td>Weight this morning (empty stomach, same time each week)</td><td>Lower than last Sunday</td></tr>
+        <tr><td class="bd">4</td><td>Study / Python hours this week</td><td>14+ hours</td></tr>
+        <tr><td class="bd">5</td><td>Biggest distraction or excuse this week</td><td>Name it. Then write one concrete fix.</td></tr>
+        <tr><td class="bd">6</td><td>What did you not do that you committed to?</td><td>One root cause. One fix for next week.</td></tr>
+        <tr><td class="bd">7</td><td>Overall week score (1–10)</td><td>Trend should go upward over 13 weeks</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>90-day weight milestones</h3>
+    <table>
+      <thead><tr><th>Checkpoint</th><th>Weight target</th><th>What should be visible</th></tr></thead>
+      <tbody>
+        <tr><td class="bd">Day 0 — today</td><td>102 kg</td><td>Take a front and side photo right now. Same lighting, same time of day.</td></tr>
+        <tr><td class="bd">Day 30</td><td>97–98 kg</td><td>Face and neck noticeably slimmer. Clothes fitting less tight everywhere.</td></tr>
+        <tr><td class="bd">Day 60</td><td>93–94 kg</td><td>Shoulders and chest showing early definition. Stomach visibly reduced.</td></tr>
+        <tr><td class="bd">Day 90</td><td>89–91 kg</td><td>People around you will notice. Energy transformed. Posture different.</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:10px">Take a photo every Sunday under the same light. You will not see daily changes. The 13-week photo comparison will show you the truth of your effort.</p>
+  </div>
+
+  <div class="card">
+    <h3>The stall protocol</h3>
+    <p>If weight stops dropping for 2 consecutive Sundays:</p>
+    <ol>
+      <li>Do not change the training. First variable to fix is always food.</li>
+      <li>Cut 100 kcal: remove 1 roti per day. That is it. Small, precise adjustment.</li>
+      <li>Track water — dehydration causes false scale readings.</li>
+      <li>If stall continues a third week: add 10 minutes of walking on 2 rest days.</li>
+    </ol>
+  </div>
+
+  <!-- DAILY LOG -->
+  <div class="card">
+    <h3>Daily log</h3>
+    <p style="margin-bottom:10px">Write honestly. One entry per day. What you did, what you skipped, and why. No one reads this except you.</p>
+    <textarea id="daily-log" class="log-area" placeholder="What did you do today? What did you skip? What was the real reason?"></textarea>
+    <div class="log-btns">
+      <button class="log-save" onclick="saveLog()">Save log</button>
+      <button class="log-clear" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="log-status" id="log-status"></div>
+  </div>
+
+  <div class="card card-info">
+    <h3 style="color:var(--c-info)">One question to ask yourself every day</h3>
+    <p style="font-size:14px;font-weight:600;color:var(--c-info);text-align:center;padding:6px 0">"Is what I am doing right now moving me toward 90 kg and a data analytics career, or away from it?"</p>
+    <p style="color:var(--c-info);margin:0">If the answer is away — stop and redirect. This question is the entire system. Everything else is logistics.</p>
+  </div>
+</div>
+
+</div><!-- /sys-content -->
+</div><!-- /sys-root -->
+
+<script>
+(function(){
+  var LS = window.localStorage;
+
+  /* ── Tab switch ── */
+  function sw(n){
+    var ps = document.querySelectorAll('.pn');
+    var bs = document.querySelectorAll('.tb');
+    for(var i=0;i<ps.length;i++) ps[i].classList.toggle('on', i===n);
+    for(var i=0;i<bs.length;i++) bs[i].classList.toggle('on', i===n);
+  }
+  window.sw = sw;
+
+  /* ── Progress bar ── */
+  function updateBar(d){
+    d = Math.max(0, Math.min(90, parseInt(d)||0));
+    var pct = Math.round((d/90)*100);
+    document.getElementById('pbar-fill').style.width = pct+'%';
+    document.getElementById('pbar-label').textContent = 'Day '+d+' of 90';
+    document.getElementById('pbar-pct').textContent = pct+'% complete';
+    document.getElementById('header-day-badge').textContent = 'Day '+d+' / 90';
+    var ph = '';
+    if(d>=1 && d<=30) ph = 'Phase 1: Install the system';
+    else if(d>=31 && d<=60) ph = 'Phase 2: Progressive overload';
+    else if(d>=61 && d<=90) ph = 'Phase 3: Peak execution';
+    document.getElementById('pbar-phase').textContent = ph;
+    document.getElementById('day-input').value = d;
+  }
+
+  function saveDay(){
+    var v = parseInt(document.getElementById('day-input').value)||0;
+    v = Math.max(0, Math.min(90, v));
+    try{ LS.setItem('sys90_day', v); } catch(e){}
+    updateBar(v);
+  }
+  window.saveDay = saveDay;
+
+  /* ── Streak ── */
+  function renderStreak(s, msg){
+    document.getElementById('streak-num').textContent = s;
+    if(msg) document.getElementById('streak-msg').textContent = msg;
+  }
+
+  function markSuccess(){
+    var s = (parseInt((function(){try{return LS.getItem('sys90_streak')}catch(e){return 0}})())||0) + 1;
+    try{ LS.setItem('sys90_streak', s); } catch(e){}
+    renderStreak(s, s === 1 ? 'First step. Keep going.' : s+' days straight. Do not break it now.');
+  }
+  window.markSuccess = markSuccess;
+
+  function markMissed(){
+    try{ LS.setItem('sys90_streak', 0); } catch(e){}
+    renderStreak(0, 'Streak reset. Tomorrow you start again. No excuses.');
+  }
+  window.markMissed = markMissed;
+
+  /* ── Daily log ── */
+  function saveLog(){
+    var v = document.getElementById('daily-log').value;
+    try{ LS.setItem('sys90_log', v); } catch(e){}
+    var st = document.getElementById('log-status');
+    st.textContent = 'Saved — '+new Date().toLocaleString();
+    st.className = 'log-status saved';
+    setTimeout(function(){ st.textContent=''; st.className='log-status'; }, 3000);
+  }
+  window.saveLog = saveLog;
+
+  function clearLog(){
+    if(!confirm('Clear the daily log? This cannot be undone.')) return;
+    document.getElementById('daily-log').value = '';
+    try{ LS.removeItem('sys90_log'); } catch(e){}
+    var st = document.getElementById('log-status');
+    st.textContent = 'Log cleared.';
+    st.className = 'log-status';
+    setTimeout(function(){ st.textContent=''; }, 2000);
+  }
+  window.clearLog = clearLog;
+
+  /* ── Auto-load on page open ── */
+  try {
+    var d = LS.getItem('sys90_day');
+    if(d !== null) updateBar(d); else updateBar(0);
+
+    var streak = parseInt(LS.getItem('sys90_streak'))||0;
+    renderStreak(streak, streak > 0 ? streak+' day'+(streak===1?'':' days')+' strong.' : 'Mark today\'s execution.');
+
+    var log = LS.getItem('sys90_log');
+    if(log) document.getElementById('daily-log').value = log;
+  } catch(e) {
+    updateBar(0);
+  }
+
+})();
+</script>
+</html>
